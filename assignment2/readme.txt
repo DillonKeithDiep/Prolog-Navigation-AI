@@ -25,15 +25,11 @@ swipl -s ailp.pl
 
 This will give you an option to open in a browser. Press Enter or type 'Y'. 
 
-* Join an agent to the game by typing 'join_game(AgentID).'
-
-* To start with a fresh board type 'reset_game.'
-
-* Before any agent can move, type 'start_game'
+* To start with a fresh board type 'ailp_reset.'
 
 * To stop the web server type command 'stop.'
 
-* Don't forget to use 'make.'  and 'reset_game.' when you have made changes to the code.
+* Don't forget to use 'make.'  and 'ailp_reset.' when you have made changes to the code.
 
 
 

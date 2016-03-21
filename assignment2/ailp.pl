@@ -2,7 +2,7 @@
  *      ailp.pl
  *
  *		AI and Logic Programming assignment runner.
- *		Loads and runs specified assignmentN.pl file from folder assignmentN.
+ *		Loads and runs specified assignmentN.pro file from folder assignmentN.
  */
  
 

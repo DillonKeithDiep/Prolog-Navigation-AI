@@ -7,15 +7,12 @@
 
 candidate_number(17655).
 
-:-consult(wp).	% Wikipedia stuff
-
 
 solve_task(Task,Cost):-
-	my_agent(Agent),
-	query_world( agent_current_position, [Agent,P] ),
+	agent_current_position(oscar,P),
 	solve_task_bt(Task,[c(0,P),P],0,R,Cost,_NewPos),!,	% prune choice point for efficiency
 	reverse(R,[_Init|Path]),
-	query_world( agent_do_moves, [Agent,Path] ).
+	agent_do_moves(oscar,Path).
 
 %% backtracking depth-first search, needs to be changed to agenda-based A*
 solve_task_bt(Task,Current,Depth,RPath,[cost(Cost),depth(Depth)],NewPos) :- 
@@ -53,10 +50,7 @@ shell:-
 
 handle_input(Input):-
 	( Input = stop -> true
-	; Input = setup -> join_game(_A),handle_input(reset)
-	; Input = status -> query_world(game_status,[S]),show_response(S),shell
-	; Input = reset -> reset_game,start_game,shell
-	; Input = whoami -> my_agent(A),show_response(A),shell
+	; Input = reset -> ailp_reset,shell
 	; Input = [H|T] -> handle_input(H),handle_input(T),shell
 	; callable(Input,G,R) -> ( call(G) -> show_response(R) ; show_response('This failed.') ),shell
 	; otherwise -> show_response('Unknown command, please try again.'),shell
@@ -68,11 +62,10 @@ get_input(Input):-
 
 % show answer to user
 show_response(R):-
-	my_agent(Agent),
 	( R=shell(Response)   -> writes('! '),writes(Response),writes(nl)
-	; R=console(Response) -> term_to_atom(Response,A),do_command([Agent,console,A])
+	; R=console(Response) -> term_to_atom(Response,A),do_command([oscar,console,A])
 	; R=both(Response)    -> show_response(shell(Response)),show_response(console(Response))
-	; R=agent(Response)   -> term_to_atom(Response,A),do_command([Agent,say,A])
+	; R=agent(Response)   -> term_to_atom(Response,A),do_command([oscar,say,A])
 	; R=[H|T]             -> show_response(H),show_response(T)
 	; R=[]                -> true
 	; otherwise           -> writes(['! ',R])
@@ -88,10 +81,10 @@ writes(A):-
 
 % callable(+Command, +Goal, ?Response)
 callable(call(G),call(G),G).
-callable(topup(S),(my_agent(Agent),query_world( agent_topup_energy, [Agent,S] )),agent(topup)).
-callable(energy,(my_agent(Agent),query_world( agent_current_energy, [Agent,E] )),both(current_energy(E))).
-callable(position,(my_agent(Agent),query_world( agent_current_position, [Agent,P] )),both(current_position(P))).
-callable(ask(S,Q),(my_agent(Agent),query_world( agent_ask_oracle, [Agent,S,Q,A] )),A).
+callable(topup(S),agent_topup_energy(oscar,S),agent(topup)).
+callable(energy,agent_current_energy(oscar,E),both(current_energy(E))).
+callable(position,agent_current_position(oscar,P),both(current_position(P))).
+callable(ask(S,Q),agent_ask_oracle(oscar,S,Q,A),A).
 callable(Task,solve_task(Task,Cost),[console(Task),shell(term(Cost))]):-
 	task(Task).
 
