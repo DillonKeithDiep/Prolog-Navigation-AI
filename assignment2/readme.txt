@@ -31,7 +31,24 @@ This will give you an option to open in a browser. Press Enter or type 'Y'.
 
 * Don't forget to use 'make.'  and 'ailp_reset.' when you have made changes to the code.
 
+////////////////////////////////////////////////////////////
 
+EXTRA TIPS:
+here are some useful things that could help ourselves:
+UPDATING CODE:
+	You don't need ailp_reset, if you're in shell enter '.' to exit with ERROR: Stream blabla
+	Then do 'make.'
+	Open 'shell.' and 'reset.', changes in oscar.pl are now applied
+LISTS:
+	c = [a|b] means c is a list, with head A and tail B
+	lists can have different types, e.g.
+	c = [a(P,F)|b] means a list of c = [a(P,F), b]
+	be careful with recursive lists, so
+	b = [1,2]
+	c = [0, b]
+	it is NOT [0,1,2] but instead [0,[1,2]]
+	good shit
 
-
-
+DIFFERENCE BETWEEN GO AND FIND
+	go(p(7,7)) location is known
+	find(o(1)) location is unknown
