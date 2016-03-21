@@ -1,22 +1,24 @@
 :- module(command_channel,
 	  [ start/0,
-	    stop/0,
-	    restart/0,
-	    set_homepage/1,		% +Url_path
-	    reset/1,			% +Initial_state
-	    await_result/0,
-	    await_result/1,		% -Result
-	    do_command/1,		% Command
-	    do_command/2		% Command, Result
+		stop/0,
+		restart/0,
+		set_homepage/1,		% +Url_path
+		reset/1,			% +Initial_state
+		await_result/0,
+		await_result/1,		% -Result
+		do_command/1,		% Command
+		do_command/2		% Command, Result
 	  ]).
 
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_parameters)).	%new
 :- use_module(library(http/http_files)).
 :- use_module(library(http/http_client)).
 :- use_module(library(http/json)).
 :- use_module(library(www_browser)).
-
+:- use_module(oscar/library/game_predicates).	%new
+ 
 :- dynamic 
 		command/1,
 		result/1,
@@ -25,19 +27,18 @@
 %-----------------------------------------------------------------------------
 % REST API WEB SERVER
 
-
 api_method_commands(_Request) :-
 	%% memberchk(method(post), Request),
 	findall(C, command(C), CommandList),
 	retractall(command(_)),
 	retractall(result(_)),
 	% write response back to client to enact commands
-    format('Content-type: application/json~n~n'),
-    current_output(Stream),
-    json_write(Stream,
-    	json([
-    		commands=CommandList
-    	])
+	format('Content-type: application/json~n~n'),
+	current_output(Stream),
+	json_write(Stream,
+		json([
+				commands=CommandList
+			])
    	).
 
 api_method_results(Request) :-
@@ -49,14 +50,14 @@ api_method_results(Request) :-
 	%% memberchk(json([command=_, result=Result
 	%% atom_json_term(Results_atom, Results, []),
 	%% assert(result(Results)),
- %%   	Results = json(R),
+	%% Results = json(R),
 	%% assert(result(R)),
-assert(result(Results_atom)),
+	assert(result(Results_atom)),
    	%% \+ memberchk([ _ = json([fail = @true]) ], R),
 	% write emply json array response back to client
-    format('Content-type: application/json~n~n'),
-    current_output(Stream),
-    json_write(Stream, json([])).
+	format('Content-type: application/json~n~n'),
+	current_output(Stream),
+	json_write(Stream, json([])).
 
 await_result :-
 	await_result(_).
@@ -78,14 +79,31 @@ do_command(Command, Result) :-
 	await_result(Result).
 
 
+%%% new %%%
+answer_query(Request):-
+%	get_data_from_request(Request, Data),
+	format('Content-type: text/plain~n~n', []),
+	http_parameters( Request,
+					[ pred(Pred, []),
+					  args(Args, [])
+					]),
+	term_to_atom(Terms,Args),
+	( apply(Pred, Terms) -> term_to_atom(Terms,A), format(A)
+	; otherwise -> format(fail)
+	).
+%%% end new %%%
+	
+
 % Requests for files in website's root or any of its subfolders 
 % need to return static files from the web server's /web/ folder.
 % Examples include: /index.html /robots.txt /resources/images/logo.jpg
-:- 	http_handler(root(.), http_reply_from_files('ailp/web', []), [prefix]).
+:- http_handler(root(.), http_reply_from_files('ailp/web', []), [prefix]).
 
 % The following handlers are exceptions to the above default:
 :- http_handler('/commands', api_method_commands, []).
 :- http_handler('/results', api_method_results, []).
+:- http_handler('/agent/queries', answer_query, [prefix]).	%new
+%:- http_handler('/agent/commands', get_command, []).	%new
 
 server_host('http://127.0.0.1').
 server_port(8000).
@@ -100,17 +118,16 @@ server_url(Url) :-
 %   a single Data list of attribute=value pairs.
 %
 get_data_from_request(Request, Data) :-
-    (
-        member(method(post), Request)
-    ->  http_read_data(Request, HTTP_POST_Data, [])
-    ;   HTTP_POST_Data = []
-    ),
-    (   memberchk(search(HTTP_GET_Data), Request)
-    ->  true
-    ;   HTTP_GET_Data = []
-    ),
-    append(HTTP_GET_Data, HTTP_POST_Data, Data).
-
+	(
+		member(method(post), Request)
+	->  http_read_data(Request, HTTP_POST_Data, [])
+	;   HTTP_POST_Data = []
+	),
+	(   memberchk(search(HTTP_GET_Data), Request)
+	->  true
+	;   HTTP_GET_Data = []
+	),
+	append(HTTP_GET_Data, HTTP_POST_Data, Data).
 
 homepage('index.html').
 
@@ -141,9 +158,9 @@ open_browser :-
 
 % start the web server 
 start :- 
-	start_server,
-	server_url(Url),
-	format('Started web server on ~w~n', [Url]),
+	start_server ->
+	(server_url(Url),
+	format('Started web server on ~w~n', [Url])),
 	open_browser.
 
 % stop the web server 
@@ -161,8 +178,6 @@ restart :-
 	start_server,
 	format('Web server restarted.~n').
 
-
-
 % reset the command interpreter to initial state
 reset(Initial_state) :- 
 	retractall(command(_)),
@@ -170,3 +185,8 @@ reset(Initial_state) :-
 	do_command([god, reset, json(Initial_state)], _Result).
 
 
+%%% new %%%
+
+%%% Queries about the world %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- set_homepage('oscar.html').
