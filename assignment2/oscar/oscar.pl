@@ -10,35 +10,86 @@ candidate_number(61545).
 
 solve_task(Task,Cost):-
 	agent_current_position(oscar,P),
-	solve_task_bt(Task,[[c(0,P),P]],0,R,Cost,_NewPos),!,	% prune choice point for efficiency
+	P = p(X0,Y0),
+	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
+	; otherwise -> H is 0), % 0 when target position unknown
+	F1 is H,
+	solve_task_bt(Task,[[c(F1,P),P]],0,R,Cost,_NewPos),!,	% prune choice point for efficiency
 	reverse(R,[_Init|Path]),
 	agent_do_moves(oscar,Path).
 
 %% backtracking depth-first search, needs to be changed to agenda-based A*
 solve_task_bt(Task,Current,Depth,RPath,[cost(Cost),depth(Depth)],NewPos) :- 
-	achieved(Task,Current,RPath,Cost,NewPos).
+	achieved(Task,Current,RPath,Cost,NewPos)
+	%,setof(Object, is_member(Object,Current), Agenda),
+	%print_list(Agenda),print("."),nl
+	.
+
 solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
+	% extract current best path
 	Current = [Head|Tail],
 	Head = [c(F,P)|RPath],
+
 	search(P,P1,R,C),
+	% search for neighbours with best path
+	find_neighbours(P, Neighbours),
+
+	%remove_loop(RPath,Neighbours,NewNeighbours),print("."),nl,
+
+	%update_neighbours(Neighbours, [], Out),
+
+	next(Neighbours, NewNeigh),
+	%length(NewNeigh, XX),
+	NewNeigh = [p(Xx,Yy)|Tail2],
+	print(Xx),
+	AP = p(3,3),
+	print(AP),
+	%print_list(NewNeigh),print("."),nl,
 	\+ memberchk(R,RPath), % check we have not been here already
 	D1 is D+1,
-	%F1 is F+C,
 	length(Current, G) , % Distance travelled
 	P1 = p(X0,Y0),
 	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
 	; otherwise -> H is 0), % 0 when target position unknown
 	F1 is G+H,
 	append([[c(F1,P1), R|RPath]],Current,Agenda),
-	print_agenda(Agenda),
-	print("."),
 	solve_task_bt(Task,Agenda, D1,RR,Cost,NewPos).
 
-print_agenda([]).
-print_agenda([Head|Tail]):-
-	Head = [c(F,P)|RPath],
-	print((F,P)),
-	print_agenda(Tail).
+remove_loop(_, [], NewNeighbours).
+
+remove_loop(RPath, [Head|Tail], NewNeighbours):-
+	(member(Head, RPath) -> delete(Head,Neighbours, NewNeighbours)
+	; true
+	),
+	remove_loop(RPath, Tail, NewNeighbours).
+
+next(_, NewNeigh):-
+	print("fk").
+
+next([Head|Tail], NewNeigh):-
+	\+ memberchk(Head,NewNeigh),
+	next(Tail, [Head|NewNeigh]).
+
+
+
+update_neighbours([], NewNeighbours, Out).
+
+update_neighbours([Head|Tail], NewNeighbours, Out):-
+	print(Head),nl,
+	append(Head,NewNeighbours, Out),
+	update_neighbours(Tail, NewNeighbours, Out).
+
+find_neighbours(P, Neighbours):-
+	findall(N,map_adjacent(P,N,empty),Neighbours).
+
+
+is_member(Object, List):-
+	memberchk(Object, List).
+
+print_list([]).
+print_list([Head|Tail]):-
+	print(Head),nl,
+	print_list(Tail).
 
 achieved(go(Exit),Current,RPath,Cost,NewPos) :-
 	% Get head assuming sorted by lowest cost
@@ -56,7 +107,6 @@ achieved(find(O),Current,RPath,Cost,NewPos) :-
 
 
 search(F,N,N,1):-
-	F = p(X,Y),
 	map_adjacent(F,N,empty).
 
 %%% command shell %%%
