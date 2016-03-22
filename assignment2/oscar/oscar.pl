@@ -18,29 +18,38 @@ solve_task(Task,Cost):-
 solve_task_bt(Task,Current,Depth,RPath,[cost(Cost),depth(Depth)],NewPos) :- 
 	achieved(Task,Current,RPath,Cost,NewPos).
 solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
-	%Current = [c(F,P)|RPath],
-	Current = [H|T],
-	H = [c(F,P)|RPath],
+	Current = [Head|Tail],
+	Head = [c(F,P)|RPath],
 	search(P,P1,R,C),
-	print(P1+"."),
 	\+ memberchk(R,RPath), % check we have not been here already
 	D1 is D+1,
-	F1 is F+C,
+	%F1 is F+C,
+	length(Current, G) , % Distance travelled
+	P1 = p(X0,Y0),
+	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
+	; otherwise -> H is 0), % 0 when target position unknown
+	F1 is G+H,
 	append([[c(F1,P1), R|RPath]],Current,Agenda),
-	%solve_task_bt(Task,[c(F1,P1),R|RPath],D1,RR,Cost,NewPos). % backtracking search
+	print_agenda(Agenda),
+	print("."),
 	solve_task_bt(Task,Agenda, D1,RR,Cost,NewPos).
 
+print_agenda([]).
+print_agenda([Head|Tail]):-
+	Head = [c(F,P)|RPath],
+	print((F,P)),
+	print_agenda(Tail).
+
 achieved(go(Exit),Current,RPath,Cost,NewPos) :-
-	print(Current+";"),
-	%Current = [c(Cost,NewPos)|RPath],
 	% Get head assuming sorted by lowest cost
 	Current = [H|T],
 	H = [c(Cost,NewPos)|RPath],
-	( Exit=none -> true,print("ay")
-	; otherwise -> RPath = [Exit|_],print("nay")
+	( Exit=none -> true
+	; otherwise -> RPath = [Exit|_]
 	).
 achieved(find(O),Current,RPath,Cost,NewPos) :-
-	Current = [c(Cost,NewPos)|RPath],
+	Current = [H|T],
+	H = [c(Cost,NewPos)|RPath],
 	( O=none    -> true
 	; otherwise -> RPath = [Last|_],map_adjacent(Last,_,O)
 	).
@@ -48,7 +57,6 @@ achieved(find(O),Current,RPath,Cost,NewPos) :-
 
 search(F,N,N,1):-
 	F = p(X,Y),
-	print(X+","),
 	map_adjacent(F,N,empty).
 
 %%% command shell %%%
