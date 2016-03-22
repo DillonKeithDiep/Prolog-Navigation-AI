@@ -5,12 +5,12 @@
  */
 
 
-candidate_number(17655).
+candidate_number(61545).
 
 
 solve_task(Task,Cost):-
 	agent_current_position(oscar,P),
-	solve_task_bt(Task,[c(0,P),P],0,R,Cost,_NewPos),!,	% prune choice point for efficiency
+	solve_task_bt(Task,[[c(0,P),P]],0,R,Cost,_NewPos),!,	% prune choice point for efficiency
 	reverse(R,[_Init|Path]),
 	agent_do_moves(oscar,Path).
 
@@ -18,18 +18,26 @@ solve_task(Task,Cost):-
 solve_task_bt(Task,Current,Depth,RPath,[cost(Cost),depth(Depth)],NewPos) :- 
 	achieved(Task,Current,RPath,Cost,NewPos).
 solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
-	Current = [c(F,P)|RPath],
+	%Current = [c(F,P)|RPath],
+	Current = [H|T],
+	H = [c(F,P)|RPath],
 	search(P,P1,R,C),
+	print(P1+"."),
 	\+ memberchk(R,RPath), % check we have not been here already
 	D1 is D+1,
 	F1 is F+C,
-	solve_task_bt(Task,[c(F1,P1),R|RPath],D1,RR,Cost,NewPos). % backtracking search
-
+	append([[c(F1,P1), R|RPath]],Current,Agenda),
+	%solve_task_bt(Task,[c(F1,P1),R|RPath],D1,RR,Cost,NewPos). % backtracking search
+	solve_task_bt(Task,Agenda, D1,RR,Cost,NewPos).
 
 achieved(go(Exit),Current,RPath,Cost,NewPos) :-
-	Current = [c(Cost,NewPos)|RPath],
-	( Exit=none -> true
-	; otherwise -> RPath = [Exit|_]
+	print(Current+";"),
+	%Current = [c(Cost,NewPos)|RPath],
+	% Get head assuming sorted by lowest cost
+	Current = [H|T],
+	H = [c(Cost,NewPos)|RPath],
+	( Exit=none -> true,print("ay")
+	; otherwise -> RPath = [Exit|_],print("nay")
 	).
 achieved(find(O),Current,RPath,Cost,NewPos) :-
 	Current = [c(Cost,NewPos)|RPath],
@@ -39,8 +47,9 @@ achieved(find(O),Current,RPath,Cost,NewPos) :-
 
 
 search(F,N,N,1):-
+	F = p(X,Y),
+	print(X+","),
 	map_adjacent(F,N,empty).
-
 
 %%% command shell %%%
 
