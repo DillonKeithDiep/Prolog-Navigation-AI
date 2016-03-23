@@ -27,21 +27,17 @@ solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 	Current = [Head|Tail],
 	Head = [c(F,G,P)|RPath],
 
-	% search for neighbours with best path
-	findall(N, get_neighbour(P,Task,N,RPath),Neighbours),
+	% search for undiscovered neighbours
+	findall(N, get_neighbour(Current,Task,N),Neighbours),
 		
 
 	% Append neighbours with tail, to remove current node
 	append(Neighbours,Tail,Queue),
+	%append(Neighbours,Current,Queue),
 
 	% Sort list then continue
 	setof(Object, is_member(Object,Queue), Agenda),
-	%print_list(Current),print("current"),nl,
-	%print_list(Tail),print("tail"),nl,
-	%print_list(Queue),print("+neighs"),nl,
-	print_list(Agenda),print("sort"),nl,
-	%read(X),
-	%sleep(0.1),
+	%print_list(Agenda),print("sort"),nl,
 
 	solve_task_bt(Task,Agenda,D1,RR,Cost,NewPos).
 
@@ -73,16 +69,29 @@ search(P,N,N,1):-
 	map_adjacent(P,N,empty).
 
 %Pos, NewPos, TargetPos, Cost, Path
-get_neighbour(P,Task,N,RPath):-
+get_neighbour(Current,Task,N):-
+	Current = [Head|Tail],
+	Head = [c(F,G0,P)|RPath],
 	map_adjacent(P,P1,empty),
 	\+ member(P1,RPath), % check we have not been here already
 	length(RPath, G),
 	( Task = go(T) -> map_distance(P1,T,H)
 	; otherwise -> H is 0
 	),
-	F is G+H,
-	GG is -G,
-	N = [c(F,GG,P1),P1|RPath].
+	F1 is G+H,
+	G1 is -G,
+	N = [c(F1,G1,P1),P1|RPath],
+	discovered(Current, N).
+
+% repeat check
+discovered([], N).
+discovered(Current, N):-
+	Current = [Head|Tail],
+	Head = [c(F,G,P)|RPath],
+	N = [c(F1,G1,P1)|RPath1],
+	\+ P == P1, % disallow if discovered
+	discovered(Tail,N).
+
 
 %%% command shell %%%
 
