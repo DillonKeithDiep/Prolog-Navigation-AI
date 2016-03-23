@@ -14,7 +14,7 @@ solve_task(Task,Cost):-
 	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
 	; otherwise -> H is 0), % 0 when target position unknown
 	F1 is H,
-	solve_task_bt(Task,[[c(F1,P),P]],0,R,Cost,_NewPos),!,	% prune choice point for efficiency
+	solve_task_bt(Task,[[c(F1,0,P),P]],0,R,Cost,_NewPos),!,	% prune choice point for efficiency
 	reverse(R,[_Init|Path]),
 	agent_do_moves(oscar,Path).
 
@@ -25,7 +25,7 @@ solve_task_bt(Task,Current,Depth,RPath,[cost(Cost),depth(Depth)],NewPos) :-
 solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 	% extract current best path
 	Current = [Head|Tail],
-	Head = [c(F,P)|RPath],
+	Head = [c(F,G,P)|RPath],
 
 	% search for neighbours with best path
 	findall(N, get_neighbour(P,Task,N,RPath),Neighbours),
@@ -39,8 +39,9 @@ solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 	%print_list(Current),print("current"),nl,
 	%print_list(Tail),print("tail"),nl,
 	%print_list(Queue),print("+neighs"),nl,
-	%print_list(Agenda),print("sort"),nl,
+	print_list(Agenda),print("sort"),nl,
 	%read(X),
+	%sleep(0.1),
 
 	solve_task_bt(Task,Agenda,D1,RR,Cost,NewPos).
 
@@ -56,14 +57,14 @@ print_list([Head|Tail]):-
 achieved(go(Exit),Current,RPath,Cost,NewPos) :-
 	% Get head assuming sorted by lowest cost
 	Current = [H|T],
-	H = [c(Cost,NewPos)|RPath],
+	H = [c(Cost,G,NewPos)|RPath],
 	( Exit=none -> true
 	; otherwise -> RPath = [Exit|_]
 	).
 
 achieved(find(O),Current,RPath,Cost,NewPos) :-
 	Current = [H|T],
-	H = [c(Cost,NewPos)|RPath],
+	H = [c(Cost,G,NewPos)|RPath],
 	( O=none    -> true
 	; otherwise -> RPath = [Last|_],map_adjacent(Last,_,O)
 	).
@@ -80,8 +81,8 @@ get_neighbour(P,Task,N,RPath):-
 	; otherwise -> H is 0
 	),
 	F is G+H,
-	N = [c(F,P1),P1|RPath]
-	.
+	GG is -G,
+	N = [c(F,GG,P1),P1|RPath].
 
 %%% command shell %%%
 
