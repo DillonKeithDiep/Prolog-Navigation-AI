@@ -32,18 +32,8 @@ solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 
 	search(P,P1,R,C),
 	% search for neighbours with best path
-	find_neighbours(P, Neighbours),
+	%find_neighbours(P, Neighbours),
 
-	%remove_loop(RPath,Neighbours,NewNeighbours),print("."),nl,
-
-	%update_neighbours(Neighbours, [], Out),
-
-	next(Neighbours, NewNeigh),
-	%length(NewNeigh, XX),
-	NewNeigh = [p(Xx,Yy)|Tail2],
-	print(Xx),
-	AP = p(3,3),
-	print(AP),
 	%print_list(NewNeigh),print("."),nl,
 	\+ memberchk(R,RPath), % check we have not been here already
 	D1 is D+1,
@@ -52,36 +42,13 @@ solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
 	; otherwise -> H is 0), % 0 when target position unknown
 	F1 is G+H,
+
+	Task = go(T),
+	findall([c(FF1,PP1)|RPath], get_neighbour(P,PP1,T,FF1,RPath),Neigh),
+
+	print_list(Neigh),print("."),nl,
 	append([[c(F1,P1), R|RPath]],Current,Agenda),
 	solve_task_bt(Task,Agenda, D1,RR,Cost,NewPos).
-
-remove_loop(_, [], NewNeighbours).
-
-remove_loop(RPath, [Head|Tail], NewNeighbours):-
-	(member(Head, RPath) -> delete(Head,Neighbours, NewNeighbours)
-	; true
-	),
-	remove_loop(RPath, Tail, NewNeighbours).
-
-next(_, NewNeigh):-
-	print("fk").
-
-next([Head|Tail], NewNeigh):-
-	\+ memberchk(Head,NewNeigh),
-	next(Tail, [Head|NewNeigh]).
-
-
-
-update_neighbours([], NewNeighbours, Out).
-
-update_neighbours([Head|Tail], NewNeighbours, Out):-
-	print(Head),nl,
-	append(Head,NewNeighbours, Out),
-	update_neighbours(Tail, NewNeighbours, Out).
-
-find_neighbours(P, Neighbours):-
-	findall(N,map_adjacent(P,N,empty),Neighbours).
-
 
 is_member(Object, List):-
 	memberchk(Object, List).
@@ -105,9 +72,17 @@ achieved(find(O),Current,RPath,Cost,NewPos) :-
 	; otherwise -> RPath = [Last|_],map_adjacent(Last,_,O)
 	).
 
+search(P,N,N,1):-
+	map_adjacent(P,N,empty).
 
-search(F,N,N,1):-
-	map_adjacent(F,N,empty).
+%Pos, NewPos, TargetPos, Cost, Path
+get_neighbour(P,P1,T,F,RPath):-
+	map_adjacent(P,P1,empty),
+	length(RPath, G),
+	map_distance(P1,T,H),
+	F is G+H
+	%,N = [c(F, P1)|RPath]
+	.
 
 %%% command shell %%%
 

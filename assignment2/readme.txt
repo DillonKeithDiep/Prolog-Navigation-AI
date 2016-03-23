@@ -52,3 +52,20 @@ LISTS:
 DIFFERENCE BETWEEN GO AND FIND
 	go(p(7,7)) location is known
 	find(o(1)) location is unknown
+
+EXTRACTING POSITION
+	Parameter 'Task' = "go(p(7,7))"
+	that is a complex term, you can extract data by
+	Task = go(T)
+	then output T = p(7,7)
+
+PRINTING
+	print(a), print( (multiple,things,at,once) )
+	'print(a),nl.' <- prints new line after
+	use recursive predicate clauses to print lists
+
+UNIFICATION
+	Let's say L is defined [A,B,C]
+	L = [H|T]
+	defines H and T, you can't redefine in prolog
+	If H/T was defined it will evaluate true or false
