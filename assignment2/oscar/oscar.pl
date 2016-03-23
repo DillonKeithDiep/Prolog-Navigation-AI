@@ -20,38 +20,32 @@ solve_task(Task,Cost):-
 
 %% backtracking depth-first search, needs to be changed to agenda-based A*
 solve_task_bt(Task,Current,Depth,RPath,[cost(Cost),depth(Depth)],NewPos) :- 
-	achieved(Task,Current,RPath,Cost,NewPos)
-	%,setof(Object, is_member(Object,Current), Agenda),
-	%print_list(Agenda),print("."),nl
-	.
+	achieved(Task,Current,RPath,Cost,NewPos).
 
 solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 	% extract current best path
 	Current = [Head|Tail],
 	Head = [c(F,P)|RPath],
 
-	search(P,P1,R,C),
 	% search for neighbours with best path
-	%find_neighbours(P, Neighbours),
-
-	%print_list(NewNeigh),print("."),nl,
-	\+ memberchk(R,RPath), % check we have not been here already
-	D1 is D+1,
-	length(Current, G) , % Distance travelled
-	P1 = p(X0,Y0),
-	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
-	; otherwise -> H is 0), % 0 when target position unknown
-	F1 is G+H,
-
 	Task = go(T),
-	findall([c(FF1,PP1)|RPath], get_neighbour(P,PP1,T,FF1,RPath),Neigh),
+	findall([c(F1,P1)|[P1|RPath]], get_neighbour(P,P1,T,F1,RPath),Neighbours),
+	
+	% Append neighbours with tail, to remove current node
+	append(Neighbours,Tail,Queue),
 
-	print_list(Neigh),print("."),nl,
-	append([[c(F1,P1), R|RPath]],Current,Agenda),
-	solve_task_bt(Task,Agenda, D1,RR,Cost,NewPos).
+	% Sort list then continue
+	setof(Object, is_member(Object,Queue), Agenda),
+	print_list(Current),print("current"),nl,
+	print_list(Tail),print("tail"),nl,
+	print_list(Queue),print("+neighs"),nl,
+	print_list(Agenda),print("sort"),nl,
+
+	solve_task_bt(Task,Agenda,D1,RR,Cost,NewPos).
 
 is_member(Object, List):-
-	memberchk(Object, List).
+	% Do not use membercheck as we want setof to give member
+	member(Object, List).
 
 print_list([]).
 print_list([Head|Tail]):-
@@ -78,6 +72,7 @@ search(P,N,N,1):-
 %Pos, NewPos, TargetPos, Cost, Path
 get_neighbour(P,P1,T,F,RPath):-
 	map_adjacent(P,P1,empty),
+	%\+ memberchk(P1,RPath), % check we have not been here already
 	length(RPath, G),
 	map_distance(P1,T,H),
 	F is G+H
