@@ -74,8 +74,8 @@ get_neighbour(P,P1,Task,F,RPath):-
 	map_adjacent(P,P1,empty),
 	\+ member(P1,RPath), % check we have not been here already
 	length(RPath, G),
-	( Task = go(T) -> map_distance(P1,T,H),print("hoi")
-	; otherwise -> H is 0,print("yoi")
+	( Task = go(T) -> map_distance(P1,T,H)
+	; otherwise -> H is 0
 	),
 	F is G+H
 	%,N = [c(F, P1)|RPath]
