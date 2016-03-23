@@ -163,9 +163,7 @@ random_link(A,L):-
 	actor(A),
 	findall(L,(link(L),wp(A,WT),wt_link(WT,L)),Ls),
 	random_member(L,Ls).
-
-
-%%% Your solution goes here
+	
 
 % Check if actor A has link L
 check(A,L):-
@@ -173,6 +171,8 @@ check(A,L):-
 	findall(A_L, (link(A_L),wt_link(WT,A_L)),Ls),
 	member(L, Ls).
 
+% Recursively ask agents if they have link L,
+% adding successful agents to the Ys list
 ask_agents(Xs,L,Ys, Zs) :-
 	Xs = [A | As],
 	(check(A,L) ->
@@ -180,15 +180,18 @@ ask_agents(Xs,L,Ys, Zs) :-
 		ask_agents(As, L, Ys, Zs),!
 	).
 
+% Set the Zs list to the completed Ys list and return
 ask_agents(_,_,Ys,Zs) :-
 	Zs = Ys.
 
-% find_identity(-A) <- find hidden identity by repeatedly calling agent_ask_oracle(oscar,o(1),link,L)
+% Find hidden actor A through recursion, starting with the full 
+% list of potential actors
 find_identity(A):-
 	findall(X, actor(X), Xs),
 	find_identity(A, Xs).
 
-% recursively ask questions until the X list is left with only one member
+% recursively ask questions, reducing the list of potential actors
+% until only one remains
 find_identity(A, Xs):-
 	agent_ask_oracle(oscar,o(1),link,L),
 	ask_agents(Xs, L, [], Zs),
