@@ -28,8 +28,9 @@ solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 	Head = [c(F,P)|RPath],
 
 	% search for neighbours with best path
-	findall([c(F1,P1)|[P1|RPath]], get_neighbour(P,P1,Task,F1,RPath),Neighbours),
-	
+	findall(N, get_neighbour(P,Task,N,RPath),Neighbours),
+		
+
 	% Append neighbours with tail, to remove current node
 	append(Neighbours,Tail,Queue),
 
@@ -59,6 +60,7 @@ achieved(go(Exit),Current,RPath,Cost,NewPos) :-
 	( Exit=none -> true
 	; otherwise -> RPath = [Exit|_]
 	).
+
 achieved(find(O),Current,RPath,Cost,NewPos) :-
 	Current = [H|T],
 	H = [c(Cost,NewPos)|RPath],
@@ -70,15 +72,15 @@ search(P,N,N,1):-
 	map_adjacent(P,N,empty).
 
 %Pos, NewPos, TargetPos, Cost, Path
-get_neighbour(P,P1,Task,F,RPath):-
+get_neighbour(P,Task,N,RPath):-
 	map_adjacent(P,P1,empty),
 	\+ member(P1,RPath), % check we have not been here already
 	length(RPath, G),
 	( Task = go(T) -> map_distance(P1,T,H)
 	; otherwise -> H is 0
 	),
-	F is G+H
-	%,N = [c(F, P1)|RPath]
+	F is G+H,
+	N = [c(F,P1),P1|RPath]
 	.
 
 %%% command shell %%%
