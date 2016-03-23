@@ -28,18 +28,18 @@ solve_task_bt(Task,Current,D,RR,Cost,NewPos) :-
 	Head = [c(F,P)|RPath],
 
 	% search for neighbours with best path
-	Task = go(T),
-	findall([c(F1,P1)|[P1|RPath]], get_neighbour(P,P1,T,F1,RPath),Neighbours),
+	findall([c(F1,P1)|[P1|RPath]], get_neighbour(P,P1,Task,F1,RPath),Neighbours),
 	
 	% Append neighbours with tail, to remove current node
 	append(Neighbours,Tail,Queue),
 
 	% Sort list then continue
 	setof(Object, is_member(Object,Queue), Agenda),
-	print_list(Current),print("current"),nl,
-	print_list(Tail),print("tail"),nl,
-	print_list(Queue),print("+neighs"),nl,
-	print_list(Agenda),print("sort"),nl,
+	%print_list(Current),print("current"),nl,
+	%print_list(Tail),print("tail"),nl,
+	%print_list(Queue),print("+neighs"),nl,
+	%print_list(Agenda),print("sort"),nl,
+	%read(X),
 
 	solve_task_bt(Task,Agenda,D1,RR,Cost,NewPos).
 
@@ -70,11 +70,13 @@ search(P,N,N,1):-
 	map_adjacent(P,N,empty).
 
 %Pos, NewPos, TargetPos, Cost, Path
-get_neighbour(P,P1,T,F,RPath):-
+get_neighbour(P,P1,Task,F,RPath):-
 	map_adjacent(P,P1,empty),
-	%\+ memberchk(P1,RPath), % check we have not been here already
+	\+ member(P1,RPath), % check we have not been here already
 	length(RPath, G),
-	map_distance(P1,T,H),
+	( Task = go(T) -> map_distance(P1,T,H),print("hoi")
+	; otherwise -> H is 0,print("yoi")
+	),
 	F is G+H
 	%,N = [c(F, P1)|RPath]
 	.
