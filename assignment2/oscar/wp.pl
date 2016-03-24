@@ -143,8 +143,8 @@ link('Coen brothers').
 link('Golden Globe Award for Best Supporting Actor – Motion Picture').
 link('Hollywood Walk of Fame').
 link('Inside the Actors Studio').
-link('Manhattan').
-link('Miller\'s Crossing').
+%link('Manhattan').
+%link('Miller\'s Crossing').
 %link('New York City').
 link('O Brother, Where Art Thou?').
 %link('Rotten Tomatoes').
@@ -184,15 +184,24 @@ ask_agents(Xs,L,Ys, Zs) :-
 ask_agents(_,_,Ys,Zs) :-
 	Zs = Ys.
 
+% task 3 - modify to work on grid
 % Find hidden actor A through recursion, starting with the full 
 % list of potential actors
 find_identity(A):-
+    % clear memory: charging stations and oracles
+    init_oscar_memory,
+    % get the agent's current position
+    agent_current_position(Agent, Pos),
+    % get the agent's current energy
+    agent_current_energy(Agent, Energy),
+    % full list of potential actors
 	findall(X, actor(X), Xs),
 	find_identity(A, Xs).
 
 % recursively ask questions, reducing the list of potential actors
 % until only one remains
 find_identity(A, Xs):-
+    % each oracle can be queried once
 	agent_ask_oracle(oscar,o(1),link,L),
 	ask_agents(Xs, L, [], Zs),
 	length(Zs,N),
@@ -201,12 +210,22 @@ find_identity(A, Xs):-
 		find_identity(A,Zs)
 	).
 
+% clear internal memory on start:
+% memory contains all charging stations so it can visit the nearest,
+% all oracles so it doesn't move to an oracle that's already been visited
+init_oscar_memory :-
+    % store charging stations in structure of the sort [(X,Y)]
+    CHs = [],
+    % store visited oracles in structure of the sort [(X,Y)]
+    Os = [].
+    % how to do with predicate/0 ???
+    
 %%% Testing
 
 :- dynamic ailp_identity/1.
 
 % asserts a random actor identity
-init_identity:-
+init_identity :-
 	random_actor(A),
 	init_identity(A).
 
@@ -227,24 +246,3 @@ test:-
 	; otherwise -> writeln('Wrong answer':A)
 	),fail.
 test.
-
-%% repeated from oscar_library.pl for testing purposes %%
-
-% agent_ask_oracle(+Agent, +OID, +Question, -Answer)
-% Agent's position needs to be map_adjacent to oracle identified by OID
-%% Test query to be used: :-agent_ask_oracle(oscar,o(1),link,L). %%
-agent_ask_oracle(Agent, OID, Question, Answer) :-
-	nonvar(Agent),
-	nonvar(OID),
-	nonvar(Question),
-	var(Answer),
-	%agent_current_position(Agent,Pos),	% ignore agent position for testing
-	%map_adjacent(Pos, AdjPos, OID),	% ignore agent position for testing
-	OID = o(_),
-	internal_object(OID, _AdjPos, Options),
-	member(question(Q)/answer(A),Options),
-	( Question=Q -> Answer=A ; Answer='I do not know' ).
-
-internal_object(o(1),p(5,3),[question(link)/answer(Link)]):-
-	ailp_identity(A),
-	random_link(A,Link).
