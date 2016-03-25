@@ -193,17 +193,20 @@ find_identity(A) :-
     find_identity(A,Xs,Pos,Energy,1).
     
 find_identity(A,Xs,Pos,Energy,N) :-
+    (N > 10 -> 
+        print('all oracles visited'),nl,terminate;
+        true),
     print('moo1'),
     print(oscar),
     print(Pos),
     % get the agent's current position
     % potentially done in oscar.pl
-    agent_current_position(oscar, Pos),
+    %agent_current_position(oscar, Pos),
     print('moo2'),
     % get the agent's current energy
     % potentially done in oscar.pl
     agent_current_energy(oscar, Energy),
-    print('moo3'),
+    print(Energy),
 % go to an oracle without dying pls: HOW TO SEARCH?????
     solve_task(find(o(N)),Cost),
     % consistently check energy
@@ -241,6 +244,7 @@ query_oracle(A,Xs,Pos,N) :-
     
 % terminate here
 found_identity(Zs) :-
+    print('success'), nl,
     Zs = [A],
     print(A),
     ! .
@@ -253,6 +257,11 @@ save_pos(Pos,Ps) :-
 clear_memory :-
     Os = [],   % oracles
     CHs = [].  % charging stations
+    
+% terminate if all oracles are visited
+terminate :-
+    print('You fail.'),
+    nl, false.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
