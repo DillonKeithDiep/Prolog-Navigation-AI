@@ -190,10 +190,12 @@ find_identity(A) :-
     clear_memory,
     % full list of potential actors
 	findall(X, actor(X), Xs),
-    find_identity(A,Xs,Pos,Energy).
+    find_identity(A,Xs,Pos,Energy,1).
     
-find_identity(A,Xs,Pos,Energy) :-
+find_identity(A,Xs,Pos,Energy,N) :-
     print('moo1'),
+    print(oscar),
+    print(Pos),
     % get the agent's current position
     % potentially done in oscar.pl
     agent_current_position(oscar, Pos),
@@ -203,7 +205,7 @@ find_identity(A,Xs,Pos,Energy) :-
     agent_current_energy(oscar, Energy),
     print('moo3'),
 % go to an oracle without dying pls: HOW TO SEARCH?????
-    solve_task(find(o(2)),Cost),
+    solve_task(find(o(N)),Cost),
     % consistently check energy
     % if a charging station is come across, save its position, how to address charging stations??
     %agent_current_position(OID, CH), % OID ???
@@ -212,23 +214,29 @@ find_identity(A,Xs,Pos,Energy) :-
     % if energy is going down, navigate to a charging station
         % there are two, go to the closer one if known
     % navigate to oracle
-    (agent_check_oracle(oscar, o(1)) ->
-        query_oracle(A,Xs,Pos); % how to handle the Os ??
-        find_identity(A,Xs,Pos,Energy) %keep on navigating
+    (agent_check_oracle(oscar, o(N)) ->
+        N1 is N+1, find_identity(A,Xs,Pos,Energy,N1); %keep on navigating
+        print('querying'),query_oracle(A,Xs,Pos,N) % how to handle the Os ??
         ). % address Agent=oscar and OID=o(1), what does it return exactly ??? 
 
 % a single oracle query    
-query_oracle(A,Xs,Pos) :-
+query_oracle(A,Xs,Pos,N) :-
     % save its position
-    agent_current_position(o(1),O),
-    save_pos(O,Os),
-        % ask an oracle
-    agent_ask_oracle(oscar,o(1),link,L),
+    print('moo4'),
+    %agent_current_position(o(N),O),
+    print('moo5'),
+    %save_pos(O,Os),
+    print('moo6'),
+    % ask an oracle
+    agent_ask_oracle(oscar,o(N),link,L),
+    print('moo7'),
 	ask_agents(Xs, L, [], Zs),
-	length(Zs,N),
-	(N == 1 ->
+    print('moo8'),
+	length(Zs,Length),
+    print('moo9'),
+	(Length == 1 ->
 		found_identity(Zs) ;
-        find_identity(A,Xs,Pos,Energy)
+        N1 is N+1,print(N1),find_identity(A,Xs,Pos,Energy,N1)
 	).
     
 % terminate here
