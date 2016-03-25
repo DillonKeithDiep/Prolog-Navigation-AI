@@ -184,21 +184,16 @@ ask_agents(Xs,L,Ys, Zs) :-
 ask_agents(_,_,Ys,Zs) :-
 	Zs = Ys.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % task 3 - modify to work on grid    
 find_identity(A) :-
-    print('moo'),
-    agent_current_position(oscar,P),
-    print('moo'),
     clear_memory,
-    print('moo'),
     % full list of potential actors
 	findall(X, actor(X), Xs),
-    print('moo'),
     find_identity(A,Xs,Pos,Energy).
     
 find_identity(A,Xs,Pos,Energy) :-
-    print('moo2'),
+    print('moo1'),
     % get the agent's current position
     % potentially done in oscar.pl
     agent_current_position(oscar, Pos),
@@ -206,12 +201,13 @@ find_identity(A,Xs,Pos,Energy) :-
     % get the agent's current energy
     % potentially done in oscar.pl
     agent_current_energy(oscar, Energy),
-    print('moo2'),
+    print('moo3'),
 % go to an oracle without dying pls: HOW TO SEARCH?????
+    solve_task(find(o(2)),Cost),
     % consistently check energy
     % if a charging station is come across, save its position, how to address charging stations??
     %agent_current_position(OID, CH), % OID ???
-    print('moo22'),
+    print('moo4'),
     %save_pos(CH, CHs),
     % if energy is going down, navigate to a charging station
         % there are two, go to the closer one if known
@@ -250,17 +246,8 @@ clear_memory :-
     Os = [],   % oracles
     CHs = [].  % charging stations
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    
-find_identity_modified(A, Xs):-
-    % each oracle can be queried once
-	agent_ask_oracle(oscar,o(1),link,L),
-	ask_agents(Xs, L, [], Zs),
-	length(Zs,N),
-	(N == 1 ->
-		Zs= [A] ;
-		find_identity(A,Zs)
-	).
 
 % recursively ask questions, reducing the list of potential actors
 % until only one remains
