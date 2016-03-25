@@ -187,25 +187,38 @@ ask_agents(_,_,Ys,Zs) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % task 3 - modify to work on grid    
 find_identity(A) :-
-    start_pos(Pos),
+    print('moo'),
+    agent_current_position(oscar,P),
+    print('moo'),
     clear_memory,
+    print('moo'),
     % full list of potential actors
 	findall(X, actor(X), Xs),
-    find_identity(A,Xs,Pos).
+    print('moo'),
+    find_identity(A,Xs,Pos,Energy).
     
-find_identity(A,Xs,Pos) :-
-    agent_current_position(oscar,Pos),
-% go to an oracle without dying pls:
+find_identity(A,Xs,Pos,Energy) :-
+    print('moo2'),
+    % get the agent's current position
+    % potentially done in oscar.pl
+    agent_current_position(oscar, Pos),
+    print('moo2'),
+    % get the agent's current energy
+    % potentially done in oscar.pl
+    agent_current_energy(oscar, Energy),
+    print('moo2'),
+% go to an oracle without dying pls: HOW TO SEARCH?????
     % consistently check energy
     % if a charging station is come across, save its position, how to address charging stations??
-    agent_current_position(OID, CH), % OID ???
-    save_pos(CH, CHs),
+    %agent_current_position(OID, CH), % OID ???
+    print('moo22'),
+    %save_pos(CH, CHs),
     % if energy is going down, navigate to a charging station
         % there are two, go to the closer one if known
     % navigate to oracle
     (agent_check_oracle(oscar, o(1)) ->
         query_oracle(A,Xs,Pos); % how to handle the Os ??
-        find_identity(A,Xs,Pos) %keep on navigating
+        find_identity(A,Xs,Pos,Energy) %keep on navigating
         ). % address Agent=oscar and OID=o(1), what does it return exactly ??? 
 
 % a single oracle query    
@@ -219,7 +232,7 @@ query_oracle(A,Xs,Pos) :-
 	length(Zs,N),
 	(N == 1 ->
 		found_identity(Zs) ;
-        find_identity(A,Xs,Pos)
+        find_identity(A,Xs,Pos,Energy)
 	).
     
 % terminate here
@@ -237,27 +250,7 @@ clear_memory :-
     Os = [],   % oracles
     CHs = [].  % charging stations
 
-% Find hidden actor A through recursion, starting with the full 
-% list of potential actors
-find_identity(A):-
-    % clear memory: charging stations and oracles
-    % potentially done in oscar.pl
-    init_oscar_memory,
-    % get the agent's current position
-    % potentially done in oscar.pl
-    agent_current_position(Agent, Pos),
-    % get the agent's current energy
-    % potentially done in oscar.pl
-    agent_current_energy(Agent, Energy),
-    % full list of potential actors
-	findall(X, actor(X), Xs),
-	agent_ask_oracle(oscar,o(1),link,L),
-	ask_agents(Xs, L, [], Zs),
-	length(Zs,N),
-	(N == 1 ->
-		Zs= [A] ;
-		find_identity(A,Zs)
-	).
+
     
 find_identity_modified(A, Xs):-
     % each oracle can be queried once
