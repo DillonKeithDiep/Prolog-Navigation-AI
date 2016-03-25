@@ -184,19 +184,90 @@ ask_agents(Xs,L,Ys, Zs) :-
 ask_agents(_,_,Ys,Zs) :-
 	Zs = Ys.
 
-% task 3 - modify to work on grid
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% task 3 - modify to work on grid    
+find_identity(A) :-
+    start_pos(Pos),
+    clear_memory,
+    % full list of potential actors
+	findall(X, actor(X), Xs),
+    find_identity(A,Xs,Pos).
+    
+find_identity(A,Xs,Pos) :-
+    agent_current_position(oscar,Pos),
+% go to an oracle without dying pls:
+    % consistently check energy
+    % if a charging station is come across, save its position, how to address charging stations??
+    agent_current_position(OID, CH), % OID ???
+    save_pos(CH, CHs),
+    % if energy is going down, navigate to a charging station
+        % there are two, go to the closer one if known
+    % navigate to oracle
+    (agent_check_oracle(oscar, o(1)) ->
+        query_oracle(A,Xs,Pos); % how to handle the Os ??
+        find_identity(A,Xs,Pos) %keep on navigating
+        ). % address Agent=oscar and OID=o(1), what does it return exactly ??? 
+
+% a single oracle query    
+query_oracle(A,Xs,Pos) :-
+    % save its position
+    agent_current_position(o(1),O),
+    save_pos(O,Os),
+        % ask an oracle
+    agent_ask_oracle(oscar,o(1),link,L),
+	ask_agents(Xs, L, [], Zs),
+	length(Zs,N),
+	(N == 1 ->
+		found_identity(Zs) ;
+        find_identity(A,Xs,Pos)
+	).
+    
+% terminate here
+found_identity(Zs) :-
+    Zs = [A],
+    print(A),
+    ! .
+   
+% use to save oracles and charging stations   
+save_pos(Pos,Ps) :-
+    Ps = [Ps|Pos].
+    
+% clear memory
+clear_memory :-
+    Os = [],   % oracles
+    CHs = [].  % charging stations
+
 % Find hidden actor A through recursion, starting with the full 
 % list of potential actors
 find_identity(A):-
     % clear memory: charging stations and oracles
+    % potentially done in oscar.pl
     init_oscar_memory,
     % get the agent's current position
+    % potentially done in oscar.pl
     agent_current_position(Agent, Pos),
     % get the agent's current energy
+    % potentially done in oscar.pl
     agent_current_energy(Agent, Energy),
     % full list of potential actors
 	findall(X, actor(X), Xs),
-	find_identity(A, Xs).
+	agent_ask_oracle(oscar,o(1),link,L),
+	ask_agents(Xs, L, [], Zs),
+	length(Zs,N),
+	(N == 1 ->
+		Zs= [A] ;
+		find_identity(A,Zs)
+	).
+    
+find_identity_modified(A, Xs):-
+    % each oracle can be queried once
+	agent_ask_oracle(oscar,o(1),link,L),
+	ask_agents(Xs, L, [], Zs),
+	length(Zs,N),
+	(N == 1 ->
+		Zs= [A] ;
+		find_identity(A,Zs)
+	).
 
 % recursively ask questions, reducing the list of potential actors
 % until only one remains
