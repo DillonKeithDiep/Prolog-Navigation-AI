@@ -145,9 +145,9 @@ link('Hollywood Walk of Fame').
 link('Inside the Actors Studio').
 %link('Manhattan').
 %link('Miller\'s Crossing').
-%link('New York City').
+link('New York City').
 link('O Brother, Where Art Thou?').
-%link('Rotten Tomatoes').
+link('Rotten Tomatoes').
 link('Saturday Night Live').
 link('Screen Actors Guild Award').
 link('The Big Lebowski').
@@ -187,59 +187,45 @@ ask_agents(_,_,Ys,Zs) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % task 3 - modify to work on grid    
 find_identity(A) :-
-    clear_memory,
+    clear_memory(Os,CHs),
     % full list of potential actors
 	findall(X, actor(X), Xs),
-    find_identity(A,Xs,Pos,Energy,1).
+    agent_current_energy(oscar,Energy),
+    find_charge(1,A,Xs).
+    
+find_charge(CID,A,Xs) :-
+    solve_task(find(c(CID)),_,NewPos),
+    print('Found station'),nl,
+    agent_topup_energy(oscar,c(CID)),
+    print('Topped up'),nl,
+    (CID == 2 -> 
+    find_identity(A,Xs,NewPos,Energy,1);
+    find_charge(2,A,Xs)).
     
 find_identity(A,Xs,Pos,Energy,N) :-
     (N > 10 -> 
         print('all oracles visited'),nl,terminate;
         true),
-    print('moo1'),
-    print(oscar),
-    print(Pos),
-    % get the agent's current position
-    % potentially done in oscar.pl
-    %agent_current_position(oscar, Pos),
-    print('moo2'),
-    % get the agent's current energy
-    % potentially done in oscar.pl
-    agent_current_energy(oscar, Energy),
-    print(Energy),
-% go to an oracle without dying pls: HOW TO SEARCH?????
-    solve_task(find(o(N)),Cost),
-    % consistently check energy
-    % if a charging station is come across, save its position, how to address charging stations??
-    %agent_current_position(OID, CH), % OID ???
-    print('moo4'),
-    %save_pos(CH, CHs),
-    % if energy is going down, navigate to a charging station
-        % there are two, go to the closer one if known
-    % navigate to oracle
+    solve_task(find(c(1)),_),
+    agent_topup_energy(oscar,c(1)),
+    agent_current_energy(oscar, Energy),   
+% go to an oracle without dying pls
+    solve_task(find(o(N)),_),
+    agent_current_position(oscar, NewPos),
+    print(NewPos),nl,
     (agent_check_oracle(oscar, o(N)) ->
-        N1 is N+1, find_identity(A,Xs,Pos,Energy,N1); %keep on navigating
-        print('querying'),query_oracle(A,Xs,Pos,N) % how to handle the Os ??
+        N1 is N+1, find_identity(A,Xs,NewPos,Energy,N1); %keep on navigating
+        print('querying'),nl,query_oracle(A,Xs,NewPos,N) % how to handle the Os ??
         ). % address Agent=oscar and OID=o(1), what does it return exactly ??? 
 
 % a single oracle query    
 query_oracle(A,Xs,Pos,N) :-
-    % save its position
-    print('moo4'),
-    %agent_current_position(o(N),O),
-    print('moo5'),
-    %save_pos(O,Os),
-    print('moo6'),
     % ask an oracle
     agent_ask_oracle(oscar,o(N),link,L),
-    print('moo7'),
 	ask_agents(Xs, L, [], Zs),
-    print('moo8'),
-	length(Zs,Length),
-    print('moo9'),
 	(Length == 1 ->
 		found_identity(Zs) ;
-        N1 is N+1,print(N1),find_identity(A,Xs,Pos,Energy,N1)
+        N1 is N+1,print(N1),nl,find_identity(A,Xs,Pos,Energy,N1)
 	).
     
 % terminate here
@@ -250,18 +236,31 @@ found_identity(Zs) :-
     ! .
    
 % use to save oracles and charging stations   
-save_pos(Pos,Ps) :-
-    Ps = [Ps|Pos].
+save_pos(Pos,Ps,NewPs) :-
+    NewPs = [Ps|Pos].
     
 % clear memory
-clear_memory :-
+clear_memory(Os,CHs) :-
     Os = [],   % oracles
-    CHs = [].  % charging stations
+    print(Os),nl,
+    CHs = [],
+    print(CHs),nl .  % charging stations
     
 % terminate if all oracles are visited
 terminate :-
     print('You fail.'),
     nl, false.
+   
+% modified solve_task so it returns the new position of the agent   
+solve_task(Task,Cost,NewPos):-
+	agent_current_position(oscar,P),
+	P = p(X0,Y0),
+	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
+	; otherwise -> H is 0), % 0 when target position unknown
+	F1 is H,
+	solve_task_bt(Task,[[c(F1,0,P),P]],0,R,Cost,NewPos),!,	% prune choice point for efficiency
+	reverse(R,[_Init|Path]),
+	agent_do_moves(oscar,Path).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
