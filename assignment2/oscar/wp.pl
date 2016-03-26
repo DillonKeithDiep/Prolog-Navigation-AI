@@ -199,25 +199,39 @@ find_charge(CID,A,Xs) :-
     agent_topup_energy(oscar,c(CID)),
     print('Topped up'),nl,
     (CID == 2 -> 
-    find_identity(A,Xs,NewPos,Energy,1);
-    find_charge(2,A,Xs)).
+        agent_current_energy(oscar, Energy),
+        find_identity(A,Xs,NewPos,Energy,1);
+        find_charge(2,A,Xs)
+    ).
     
 find_identity(A,Xs,Pos,Energy,N) :-
     (N > 10 -> 
-        print('all oracles visited'),nl,terminate;
+        print('all oracles visited'),nl,terminate(Xs);
         true),
-    solve_task(find(c(1)),_),
-    agent_topup_energy(oscar,c(1)),
-    agent_current_energy(oscar, Energy),   
+    recharge(Energy,NewEnergy),  
 % go to an oracle without dying pls
     solve_task(find(o(N)),_),
     agent_current_position(oscar, NewPos),
     print(NewPos),nl,
     (agent_check_oracle(oscar, o(N)) ->
-        N1 is N+1, find_identity(A,Xs,NewPos,Energy,N1); %keep on navigating
+        N1 is N+1, find_identity(A,Xs,NewPos,NewEnergy,N1); %keep on navigating
         print('querying'),nl,query_oracle(A,Xs,NewPos,N) % how to handle the Os ??
         ). % address Agent=oscar and OID=o(1), what does it return exactly ??? 
 
+% recharging conditions
+recharge(Energy,NewEnergy) :-
+    agent_current_position(oscar, Pos),
+    solve_task_mod(find(c(1)),Cost1,_),
+    Cost1 = [cost(C1)|Cost1s],
+    solve_task_mod(find(c(2)),Cost2,_),
+    Cost2 = [cost(C2)|Cost2s],
+    (C1 > C2 ->
+        ID is 2;
+        ID is 1),
+    solve_task(find(c(ID)),_,_),
+    agent_topup_energy(oscar,c(ID)),
+    agent_current_energy(oscar, NewEnergy).
+    
 % a single oracle query    
 query_oracle(A,Xs,Pos,N) :-
     % ask an oracle
@@ -247,8 +261,9 @@ clear_memory(Os,CHs) :-
     print(CHs),nl .  % charging stations
     
 % terminate if all oracles are visited
-terminate :-
-    print('You fail.'),
+terminate(Xs) :-
+    print('Recovering identity failed, possibilities:'),nl,
+    print_list(Xs),
     nl, false.
    
 % modified solve_task so it returns the new position of the agent   
@@ -261,6 +276,16 @@ solve_task(Task,Cost,NewPos):-
 	solve_task_bt(Task,[[c(F1,0,P),P]],0,R,Cost,NewPos),!,	% prune choice point for efficiency
 	reverse(R,[_Init|Path]),
 	agent_do_moves(oscar,Path).
+    
+% modified solve_task so doesn't do the move  
+solve_task_mod(Task,Cost,NewPos):-
+	agent_current_position(oscar,P),
+	P = p(X0,Y0),
+	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
+	; otherwise -> H is 0), % 0 when target position unknown
+	F1 is H,
+	solve_task_bt(Task,[[c(F1,0,P),P]],0,R,Cost,NewPos),!,	% prune choice point for efficiency
+	reverse(R,[_Init|Path]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
