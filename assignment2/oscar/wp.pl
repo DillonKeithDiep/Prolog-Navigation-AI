@@ -231,9 +231,11 @@ find_identity(A,Xs,Pos,Energy,N) :-
         print('all oracles visited'),nl,terminate(Xs);
         true),
     solve_task_mod(find(o(N)),[cost(Cost)|Costs],_),
-    (Cost+50 > Energy ->
-        NewEnergy is Energy;
-        recharge(Energy,NewEnergy)),  
+    agent_current_energy(oscar,EnergyCheck),
+    (EnergyCheck > 50 ->
+        NewEnergy is EnergyCheck;
+        recharge(EnergyCheck,NewEnergy)),
+    print(NewEnergy),nl,
 % go to an oracle without dying pls
     solve_task(find(o(N)),_),
     agent_current_position(oscar, NewPos),
@@ -290,7 +292,7 @@ clear_memory(Os,CHs) :-
 terminate(Xs) :-
     length(Xs,Length),
     (Length == 1 ->
-		found_identity(Xs) ;
+		found_identity(Xs),! ;
         print('Recovering identity failed, possibilities:'),nl,
         print_list(Xs),
         nl, false).
