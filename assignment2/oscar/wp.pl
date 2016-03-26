@@ -187,35 +187,60 @@ ask_agents(_,_,Ys,Zs) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % task 3 - modify to work on grid    
 find_identity(A) :-
-    clear_memory(Os,CHs),
+    clear_memory(Os,CHs), % won't need CHs for now
     % full list of potential actors
 	findall(X, actor(X), Xs),
     agent_current_energy(oscar,Energy),
     find_charge(1,A,Xs).
-    
+
+% probs won't need this but leave for now    
 find_charge(CID,A,Xs) :-
-    solve_task(find(c(CID)),_,NewPos),
+    solve_task_mod(find(c(CID)),_,NewPos),
     print('Found station'),nl,
-    agent_topup_energy(oscar,c(CID)),
-    print('Topped up'),nl,
     (CID == 2 -> 
         agent_current_energy(oscar, Energy),
+        %OIDs = [1,2,3,4,5,6,7,8,9,10],
         find_identity(A,Xs,NewPos,Energy,1);
         find_charge(2,A,Xs)
     ).
+
+% get all oracles' positions
+%get_oracles(OID) :-
+ %   (OID < 11 ->
+  %      solve_task_mod(find(c(OID)),_,Pos),
+   %     oracle_struct(OID,Pos,agent_check_oracle(oscar,o(OID))),
+    %    OIDNew is OID+1,
+     %   get_oracles(OIDNew);
+      %  skip).
+
+%oracle_struct(OID,Pos,Visited).
+
+%find_identity_oracles(A,Xs,Pos,Energy,N,OIDs) :-
+ %   (N > 10 -> 
+  %      print('all oracles initialised'),
+   %     nl,
+    %    agent_current_energy(oscar, Energy),
+     %   find_identity(A,Xs,Pos,Energy,N,OIDs);
+      %  true),
+    %solve_task_mod(o(N),Cost,NewPos),
+    %N1 is N+1.
     
+       
 find_identity(A,Xs,Pos,Energy,N) :-
     (N > 10 -> 
         print('all oracles visited'),nl,terminate(Xs);
         true),
-    recharge(Energy,NewEnergy),  
+    solve_task_mod(find(o(N)),[cost(Cost)|Costs],_),
+    (Cost+50 > Energy ->
+        NewEnergy is Energy;
+        recharge(Energy,NewEnergy)),  
 % go to an oracle without dying pls
     solve_task(find(o(N)),_),
     agent_current_position(oscar, NewPos),
     print(NewPos),nl,
     (agent_check_oracle(oscar, o(N)) ->
         N1 is N+1, find_identity(A,Xs,NewPos,NewEnergy,N1); %keep on navigating
-        print('querying'),nl,query_oracle(A,Xs,NewPos,N) % how to handle the Os ??
+        print('querying'),nl,query_oracle(A,Xs,NewPos,NewEnergy,N) % how to handle the Os ??
         ). % address Agent=oscar and OID=o(1), what does it return exactly ??? 
 
 % recharging conditions
@@ -233,20 +258,23 @@ recharge(Energy,NewEnergy) :-
     agent_current_energy(oscar, NewEnergy).
     
 % a single oracle query    
-query_oracle(A,Xs,Pos,N) :-
+query_oracle(A,Xs,Pos,Energy,N) :-
     % ask an oracle
+    print('Asking oracle'),nl,
     agent_ask_oracle(oscar,o(N),link,L),
+    print('Asking agents'),nl,
 	ask_agents(Xs, L, [], Zs),
+    length(Zs,Length),
 	(Length == 1 ->
 		found_identity(Zs) ;
-        N1 is N+1,print(N1),nl,find_identity(A,Xs,Pos,Energy,N1)
+        N1 is N+1,print(N1),nl,find_identity(A,Zs,Pos,Energy,N1)
 	).
     
 % terminate here
 found_identity(Zs) :-
-    print('success'), nl,
+    print('Identity recovered successfully:'), nl,
     Zs = [A],
-    print(A),
+    print(A),nl,
     ! .
    
 % use to save oracles and charging stations   
@@ -256,15 +284,16 @@ save_pos(Pos,Ps,NewPs) :-
 % clear memory
 clear_memory(Os,CHs) :-
     Os = [],   % oracles
-    print(Os),nl,
-    CHs = [],
-    print(CHs),nl .  % charging stations
+    CHs = [].  % charging stations
     
 % terminate if all oracles are visited
 terminate(Xs) :-
-    print('Recovering identity failed, possibilities:'),nl,
-    print_list(Xs),
-    nl, false.
+    length(Xs,Length),
+    (Length == 1 ->
+		found_identity(Xs) ;
+        print('Recovering identity failed, possibilities:'),nl,
+        print_list(Xs),
+        nl, false).
    
 % modified solve_task so it returns the new position of the agent   
 solve_task(Task,Cost,NewPos):-
@@ -301,16 +330,6 @@ find_identity(A, Xs):-
 		Zs= [A] ;
 		find_identity(A,Zs)
 	).
-
-% clear internal memory on start:
-% memory contains all charging stations so it can visit the nearest,
-% all oracles so it doesn't move to an oracle that's already been visited
-init_oscar_memory :-
-    % store charging stations in structure of the sort [(X,Y)]
-    CHs = [],
-    % store visited oracles in structure of the sort [(X,Y)]
-    Os = [].
-    % how to do with predicate/0 ???
     
 %%% Testing
 
