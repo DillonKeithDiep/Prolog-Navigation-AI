@@ -242,11 +242,11 @@ recharge(Energy,NewEnergy,CHs) :-
     map_distance(Pos,Pos2,C2),
     print(C2),nl,
     (C1 > C2 ->
-        ID is 2;
-        ID is 1),
-    print('before solve task'),nl,
+        solve_task(go(Pos2),_,_);
+        solve_task(go(Pos1),_,_)),
+    print('after solve task'),nl,
     print(Energy),nl,
-    solve_task(find(c(ID)),_,_),
+    %solve_task(find(c(ID)),_,_),
     agent_topup_energy(oscar,c(ID)),
     agent_current_energy(oscar, NewEnergy).
     
