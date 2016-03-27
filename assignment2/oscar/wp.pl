@@ -220,46 +220,25 @@ find_identity(A,Xs,Pos,Energy,I,CHs,Os) :-
 
 % search until the oracle found has not been visited TO FIX
 % WHILE (oracleWasVisited) {look for the closest oracle}
-found(I,OPos) :-
+found(I,Os,OPos) :-
     solve_task_mod(find(o(I)),_,OPos),
-    print('I'),print(I),nl,
-    (member(I,Os) ->
-        print('in if'),nl,found(I,_,OPos);
-        true).   
-
-found(I,I1,OPos) :-
-    I \= I1, 
-    solve_task_mod(find(o(I1)),_,OPos),
-    print('I1'),print(I1),nl,
-    (member(I1,Os) ->
-        print('in if'),nl,found(I1,_,OPos);
-        true).
-
-
+    \+member(I,Os).
 
 % find an oracle that hasn't been visited yet
 find_oracle(A,Xs,Pos,Energy,I,CHs,Os) :-
-    found(I,OPos),
-    print('in find oracle'),nl,
+    found(I,Os,OPos),
     solve_task(go(OPos),_), % actually move to that oracle
-    print('querying'),nl,
-    Os = [OsItems],
-    NewOs = [OsItems | I], % and add its ID to the visited ones
+    append(Os, [I], NewOs), % and add its ID to the visited ones
     query_oracle(A,Xs,OPos,Energy,I,CHs,NewOs). % ask the oracle
         
 % a single oracle query    
 query_oracle(A,Xs,Pos,Energy,I,CHs,Os) :-
     % ask an oracle
-    print('Asking oracle'),nl,
     agent_ask_oracle(oscar,o(I),link,L),
-    print('Asking agents'),nl,
 	ask_agents(Xs, L, [], Zs),
-    print('After asking agents'),nl,
-    length(Zs,Length),
-    print_list(Zs),nl,
 	(Length == 1 ->
-        print('in query oracle if'),found_identity(Zs);
-        print('in query oracle else'),nl,print(I),nl,find_identity(A,Zs,Pos,Energy,I,CHs,Os)
+        found_identity(Zs);
+        find_identity(A,Zs,Pos,Energy,I,CHs,Os)
 	).
     
 % terminate here
@@ -325,7 +304,7 @@ solve_task_mod(Task,Cost,NewPos):-
 	(Task = go(p(X1,Y1)) -> H is abs(X0-X1)+abs(Y0-Y1) % Manhattan distance
 	; otherwise -> H is 0), % 0 when target position unknown
 	F1 is H,
-	solve_task_bt(Task,[[c(F1,0,P),P]],0,R,Cost,NewPos),!,	% prune choice point for efficiency
+	solve_task_bt(Task,[[c(F1,0,P),P]],0,R,Cost,NewPos),	% prune choice point for efficiency
 	reverse(R,[_Init|Path]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
