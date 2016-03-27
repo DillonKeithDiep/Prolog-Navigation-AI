@@ -185,82 +185,81 @@ ask_agents(_,_,Ys,Zs) :-
 	Zs = Ys.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% task 3 - modify to work on grid    
+% task 3 - modify to work on grid
+
+% the function that should be called   
 find_identity(A) :-
-    clear_memory(Os,CHs), % won't need CHs for now
+    clear_memory(Os,CHs), % visited oracles and stations
     % full list of potential actors
 	findall(X, actor(X), Xs),
-    find_charge(1,A,Xs,CHs).
+    find_charge(1,A,Xs,CHs,Os). 
 
-% probs won't need this but leave for now    
-find_charge(CID,A,Xs,CHs) :-
+% find the two charging stations and save in memory   
+find_charge(CID,A,Xs,CHs,Os) :-
+    % modified solve task won't make the move, just perform the search
     solve_task_mod(find(c(CID)),_,NewPos),
-    print(NewPos),nl,
     (CID == 2 -> 
         agent_current_energy(oscar, Energy),
-        print(Energy),nl,
-        %OIDs = [1,2,3,4,5,6,7,8,9,10],
-        find_identity(A,Xs,NewPos,Energy,1,[CHs|NewPos]);
-        print('find charge 2'),nl,
-        find_charge(2,A,Xs,[CHs|NewPos])
+        find_identity(A,Xs,NewPos,Energy,1,[CHs|NewPos],Os) % the two stations are found, move on
+        ;
+        find_charge(2,A,Xs,[CHs|NewPos],Os) % find the second station
     ).
-    
-find_identity(A,Xs,Pos,Energy,N,CHs) :-
-    (N > 10 -> 
-        print('all oracles visited'),nl,terminate(Xs);
-        true),
-    print('In find identity'),nl,
-    %solve_task_mod(find(o(N)),[cost(Cost)|Costs],_),
-    print('After mod oracle'),nl,
-    agent_current_energy(oscar,EnergyCheck),
-    print(EnergyCheck),nl,
-    (EnergyCheck > 50 ->
-        NewEnergy is EnergyCheck,print(NewEnergy),nl;
-        print('recharge'),nl,recharge(EnergyCheck,NewEnergy,CHs)),
-    print(NewEnergy),nl,
-% go to an oracle without dying pls
-    solve_task(find(o(N)),_),
-    print('After oracle'),nl,
-    agent_current_position(oscar, NewPos),
-    print(NewPos),nl,
-    (agent_check_oracle(oscar, o(N)) ->
-        N1 is N+1, find_identity(A,Xs,NewPos,NewEnergy,N1,CHs); %keep on navigating
-        print('querying'),nl,query_oracle(A,Xs,NewPos,NewEnergy,N,CHs) % how to handle the Os ??
-        ). % address Agent=oscar and OID=o(1), what does it return exactly ??? 
 
-% recharging conditions
-recharge(Energy,NewEnergy,CHs) :-
-    print('in recharge'),nl,
-    agent_current_position(oscar, Pos),
-    print(Pos),nl,
-    CHs = [Temp | Pos2],
-    Temp = [Empty | Pos1],
-    print(Pos1),nl,
-    print(Pos2),nl,
-    map_distance(Pos,Pos1,C1),
-    print(C1),nl,
-    map_distance(Pos,Pos2,C2),
-    print(C2),nl,
-    (C1 > C2 ->
-        solve_task(go(Pos2),_,_);
-        solve_task(go(Pos1),_,_)),
-    print('after solve task'),nl,
-    print(Energy),nl,
-    %solve_task(find(c(ID)),_,_),
-    agent_topup_energy(oscar,c(ID)),
-    agent_current_energy(oscar, NewEnergy).
-    
+% the proper identity search    
+find_identity(A,Xs,Pos,Energy,I,CHs,Os) :-
+    (length(Os,10) ->  % check is all oracles are visited
+        print('All oracles visited.'),nl,terminate(Xs);
+        true),
+    agent_current_energy(oscar,EnergyCheck),
+    (EnergyCheck > 50 -> % check if the agent needs to recharge
+        NewEnergy is EnergyCheck; % enough energy
+        recharge(EnergyCheck,NewEnergy,CHs)), % not enough energy, so recharge
+    agent_current_position(oscar, NewPos),
+    % find an oracle that hasn't been visited before
+    find_oracle(A,Xs,NewPos,Energy,_,CHs,Os).
+
+% search until the oracle found has not been visited TO FIX
+% WHILE (oracleWasVisited) {look for the closest oracle}
+found(I,OPos) :-
+    solve_task_mod(find(o(I)),_,OPos),
+    print('I'),print(I),nl,
+    (member(I,Os) ->
+        print('in if'),nl,found(I,_,OPos);
+        true).   
+
+found(I,I1,OPos) :-
+    I \= I1, 
+    solve_task_mod(find(o(I1)),_,OPos),
+    print('I1'),print(I1),nl,
+    (member(I1,Os) ->
+        print('in if'),nl,found(I1,_,OPos);
+        true).
+
+
+
+% find an oracle that hasn't been visited yet
+find_oracle(A,Xs,Pos,Energy,I,CHs,Os) :-
+    found(I,OPos),
+    print('in find oracle'),nl,
+    solve_task(go(OPos),_), % actually move to that oracle
+    print('querying'),nl,
+    Os = [OsItems],
+    NewOs = [OsItems | I], % and add its ID to the visited ones
+    query_oracle(A,Xs,OPos,Energy,I,CHs,NewOs). % ask the oracle
+        
 % a single oracle query    
-query_oracle(A,Xs,Pos,Energy,N,CHs) :-
+query_oracle(A,Xs,Pos,Energy,I,CHs,Os) :-
     % ask an oracle
     print('Asking oracle'),nl,
-    agent_ask_oracle(oscar,o(N),link,L),
+    agent_ask_oracle(oscar,o(I),link,L),
     print('Asking agents'),nl,
 	ask_agents(Xs, L, [], Zs),
+    print('After asking agents'),nl,
     length(Zs,Length),
+    print_list(Zs),nl,
 	(Length == 1 ->
-		found_identity(Zs) ;
-        N1 is N+1,print(N1),nl,find_identity(A,Zs,Pos,Energy,N1,CHs)
+        print('in query oracle if'),found_identity(Zs);
+        print('in query oracle else'),nl,print(I),nl,find_identity(A,Zs,Pos,Energy,I,CHs,Os)
 	).
     
 % terminate here
@@ -278,6 +277,26 @@ save_pos(Pos,Ps,NewPs) :-
 clear_memory(Os,CHs) :-
     Os = [],   % oracles
     CHs = [].  % charging stations
+
+% recharging conditions
+recharge(Energy,NewEnergy,CHs) :-
+    print('in recharge'),nl,
+    agent_current_position(oscar, Pos),
+    print(Pos),nl,
+    CHs = [Temp | Pos2],
+    Temp = [Empty | Pos1],
+    print(Pos1),nl,
+    print(Pos2),nl,
+    map_distance(Pos,Pos1,C1),
+    print(C1),nl,
+    map_distance(Pos,Pos2,C2),
+    print(C2),nl,
+    (C1 > C2 ->
+        solve_task(go(Pos2),_,_);
+        solve_task(go(Pos1),_,_)),
+    agent_topup_energy(oscar,c(ID)),
+    agent_current_energy(oscar, NewEnergy).
+    
     
 % terminate if all oracles are visited
 terminate(Xs) :-
