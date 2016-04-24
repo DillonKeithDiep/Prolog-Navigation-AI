@@ -209,14 +209,15 @@ find_charge(CID,A,Xs,CHs,Os) :-
 % the proper identity search    
 find_identity(A,Xs,Pos,Energy,I,CHs,Os) :-
 	print("in find identity"), nl,
-    (length(Os,10) ->  % check is all oracles are visited
+    (length(Xs,1);length(Os,10) ->  % check is all oracles are visited
         print('All oracles visited.'),nl,terminate(Xs)
     ;    
-    agent_current_energy(oscar,EnergyCheck),
-    (EnergyCheck > 50 -> % check if the agent needs to recharge
-        NewEnergy is EnergyCheck; % enough energy
-        recharge(EnergyCheck,NewEnergy,CHs)), % not enough energy, so recharge
-    agent_current_position(oscar, NewPos)
+    	agent_current_energy(oscar,EnergyCheck),
+	    (EnergyCheck > 50 -> % check if the agent needs to recharge
+	        NewEnergy is EnergyCheck
+	    ; % enough energy
+	        recharge(EnergyCheck,NewEnergy,CHs)), % not enough energy, so recharge
+	    	agent_current_position(oscar, NewPos)
     ),
     % find an oracle that hasn't been visited before
     find_oracle(A,Xs,NewPos,Energy,_,CHs,Os).
@@ -228,9 +229,9 @@ found(I,Os,OPos) :-
     solve_task_mod(find(o(I)),_,OPos),
     \+member(I,Os).
 
-find_oracle(_,_,_,_,_,_,Os) :-
+find_oracle(_,Xs,_,_,_,_,Os) :-
 	print("in find oracle 1"),nl,
-	length(Os,10),
+	length(Xs,1);length(Os,10),
 	print("Terminating"),nl,
 	!.
 
