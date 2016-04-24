@@ -208,13 +208,14 @@ find_charge(CID,A,Xs,CHs,Os) :-
 % the proper identity search    
 find_identity(A,Xs,Pos,Energy,I,CHs,Os) :-
     (length(Os,10) ->  % check is all oracles are visited
-        print('All oracles visited.'),nl,terminate(Xs);
-        true),
+        print('All oracles visited.'),nl,terminate(Xs)
+    ;    
     agent_current_energy(oscar,EnergyCheck),
     (EnergyCheck > 50 -> % check if the agent needs to recharge
         NewEnergy is EnergyCheck; % enough energy
         recharge(EnergyCheck,NewEnergy,CHs)), % not enough energy, so recharge
-    agent_current_position(oscar, NewPos),
+    agent_current_position(oscar, NewPos)
+    ),
     % find an oracle that hasn't been visited before
     find_oracle(A,Xs,NewPos,Energy,_,CHs,Os).
 
@@ -224,13 +225,18 @@ found(I,Os,OPos) :-
     solve_task_mod(find(o(I)),_,OPos),
     \+member(I,Os).
 
+find_oracle(_,_,_,_,_,_,Os) :-
+	length(Os,10),
+	print("Terminating"),nl,
+	!.
+
 % find an oracle that hasn't been visited yet
 find_oracle(A,Xs,Pos,Energy,I,CHs,Os) :-
     found(I,Os,OPos),
     solve_task(go(OPos),_), % actually move to that oracle
     append(Os, [I], NewOs), % and add its ID to the visited ones
     query_oracle(A,Xs,OPos,Energy,I,CHs,NewOs). % ask the oracle
-        
+
 % a single oracle query    
 query_oracle(A,Xs,Pos,Energy,I,CHs,Os) :-
     % ask an oracle
@@ -246,7 +252,7 @@ found_identity(Zs) :-
     print('Identity recovered successfully:'), nl,
     Zs = [A],
     print(A),nl,
-    ! .
+    !.
    
 % use to save oracles and charging stations   
 save_pos(Pos,Ps,NewPs) :-
@@ -259,17 +265,11 @@ clear_memory(Os,CHs) :-
 
 % recharging conditions
 recharge(Energy,NewEnergy,CHs) :-
-    print('in recharge'),nl,
     agent_current_position(oscar, Pos),
-    print(Pos),nl,
     CHs = [Temp | Pos2],
     Temp = [Empty | Pos1],
-    print(Pos1),nl,
-    print(Pos2),nl,
     map_distance(Pos,Pos1,C1),
-    print(C1),nl,
     map_distance(Pos,Pos2,C2),
-    print(C2),nl,
     (C1 > C2 ->
         solve_task(go(Pos2),_,_);
         solve_task(go(Pos1),_,_)),
@@ -284,7 +284,7 @@ terminate(Xs) :-
 		found_identity(Xs),! ;
         print('Recovering identity failed, possibilities:'),nl,
         print_list(Xs),
-        nl, false).
+        nl, !).
    
 % modified solve_task so it returns the new position of the agent   
 solve_task(Task,Cost,NewPos):-
