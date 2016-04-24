@@ -196,6 +196,7 @@ find_identity(A) :-
 
 % find the two charging stations and save in memory   
 find_charge(CID,A,Xs,CHs,Os) :-
+	print("in find charge"),nl,
     % modified solve task won't make the move, just perform the search
     solve_task_mod(find(c(CID)),_,NewPos),
     (CID == 2 -> 
@@ -207,6 +208,7 @@ find_charge(CID,A,Xs,CHs,Os) :-
 
 % the proper identity search    
 find_identity(A,Xs,Pos,Energy,I,CHs,Os) :-
+	print("in find identity"), nl,
     (length(Os,10) ->  % check is all oracles are visited
         print('All oracles visited.'),nl,terminate(Xs)
     ;    
@@ -222,16 +224,19 @@ find_identity(A,Xs,Pos,Energy,I,CHs,Os) :-
 % search until the oracle found has not been visited TO FIX
 % WHILE (oracleWasVisited) {look for the closest oracle}
 found(I,Os,OPos) :-
+	print("in found"),nl,
     solve_task_mod(find(o(I)),_,OPos),
     \+member(I,Os).
 
 find_oracle(_,_,_,_,_,_,Os) :-
+	print("in find oracle 1"),nl,
 	length(Os,10),
 	print("Terminating"),nl,
 	!.
 
 % find an oracle that hasn't been visited yet
 find_oracle(A,Xs,Pos,Energy,I,CHs,Os) :-
+	print("in find oracle 2"),nl,
     found(I,Os,OPos),
     solve_task(go(OPos),_), % actually move to that oracle
     append(Os, [I], NewOs), % and add its ID to the visited ones
@@ -279,6 +284,7 @@ recharge(Energy,NewEnergy,CHs) :-
     
 % terminate if all oracles are visited
 terminate(Xs) :-
+	print("in terminate"),nl,
     length(Xs,Length),
     (Length == 1 ->
 		found_identity(Xs),! ;
